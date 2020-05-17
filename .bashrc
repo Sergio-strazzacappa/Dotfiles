@@ -9,7 +9,7 @@
 ### Aliases ###
 ###############
 
-alias ls='ls --color=auto'
+alias ls='ls --color=auto -h'
 alias pacmanRo='sudo pacman -Rns $(pacman -Qtdq)'
 alias config='/usr/bin/git --git-dir=$HOME/.dotfiles --work-tree=$HOME'
 
