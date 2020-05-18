@@ -26,6 +26,18 @@ local hotkeys_popup = require("awful.hotkeys_popup")
 -- when client with a matching name is opened:
 require("awful.hotkeys_popup.keys")
 
+--------------------------------------
+-- Imports from my personal widgets --
+--------------------------------------
+
+local batteryarc_widget = require("awesome-wm-widgets.batteryarc-widget.batteryarc")
+local brightnessarc_widget = require("awesome-wm-widgets.brightnessarc-widget/brightnessarc")
+local calendar_widget = require("awesome-wm-widgets.calendar-widget.calendar")
+local cpu_widget = require("awesome-wm-widgets.cpu-widget.cpu-widget")
+local ram_widget = require("awesome-wm-widgets.ram-widget.ram-widget")
+local todo_widget = require("awesome-wm-widgets.todo-widget.todo")
+local volumebar_widget = require("awesome-wm-widgets.volumebar-widget.volumebar")
+
 -- {{{ Error handling
 -- Check if awesome encountered an error during startup and fell back to
 -- another config (This code will only ever execute for the fallback config)
@@ -53,7 +65,7 @@ end
 
 -- {{{ Variable definitions
 -- Themes define colours, icons, font and wallpapers.
-beautiful.init("/home/wishmaster/.config/awesome/default/default.lua")
+beautiful.init("/home/wishmaster/.config/awesome/default/theme.lua")
 
 -- This is used later as the default terminal and editor to run.
 terminal = "alacritty"
@@ -78,7 +90,7 @@ awful.layout.layouts = {
     awful.layout.suit.tile,
     -- awful.layout.suit.tile.left,
     awful.layout.suit.tile.bottom,
-    -- awful.layout.suit.tile.top,
+    awful.layout.suit.tile.top,
     awful.layout.suit.fair,
     awful.layout.suit.fair.horizontal,
     -- awful.layout.suit.spiral,
@@ -126,23 +138,12 @@ mymainmenu = awful.menu({ items = { { "Awesome", myawesomemenu, beautiful.menu_s
                                   }
                         })
 
--- Widget de prueba
-praisewidget = wibox.widget.textbox()
-praisewidget.text = "You are great "
-
 mylauncher = awful.widget.launcher({ image = beautiful.awesome_icon,
                                      menu = mymainmenu })
 
 -- Menubar configuration
 menubar.utils.terminal = terminal -- Set the terminal for applications that require it
 -- }}}
-
--- Keyboard map indicator and switcher
-mykeyboardlayout = awful.widget.keyboardlayout()
-
--- {{{ Wibar
--- Create a textclock widget
-mytextclock = wibox.widget.textclock()
 
 -- Create a wibox for each screen and add it
 local taglist_buttons = gears.table.join(
@@ -203,17 +204,76 @@ awful.screen.connect_for_each_screen(function(s)
     -- Wallpaper
     set_wallpaper(s)
 
---------------
--- Custom tags
---------------
+-------------------------
+------ Custom tags ------
+-------------------------
 
     -- Each screen has its own tag table.
-    -- awful.tag({ "1", "2", "3", "4", "5", "6", "7", "8", "9" }, s, awful.layout.layouts[1])
-
-    local names = {"MAIN", "TERMINAL", "WEB", "DEV"}
+    local names = {"WEB", "DEV", "VM", "GAMES", "MEDIA", "TERMINAL"}
     local l = awful.layout.suit
-    local layouts = {l.floating, l.floating, l.tile, l.tile}
+    local layouts = {l.floating, l.tile, l.floating, l.floating, l.tile, l.tile}
     awful.tag(names, s, layouts)
+
+    -----------------------------
+    ---------- WIDGETS ----------
+    -----------------------------
+
+    -- No utilizados
+    local mykeyboardlayout = awful.widget.keyboardlayout()
+
+    local separator = wibox.widget {
+        text = " ",
+        widget = wibox.widget.textbox
+    }
+
+    local batteryarc_conf = {
+        font = 'Monospace 8',
+        arc_thikness = 10,
+        show_current_level = true,
+        size = 30,
+        main_color = '#FFFFFF',
+        bg_color = '#885997',
+        low_level_color = '#FF0000',
+        medium_level_color = '#00FF00',
+        charging = '#0000FF',
+        warning_msg_title = 'Alerta',
+        warning_msg_text = 'Nivel de batería baja',
+        warning_msg_position = 'top_right',
+        warning_msg_icon = '~/.config/awesome/awesome-wm-widgets/batteryarc-widget/warning.png',
+        enable_battery_warning = true,
+    }
+
+    local brightnessarc_config = {
+        get_brigness_cmd = 'xbacklight -get',
+        inc_brightness_cmd = 'xbacklight -inc 5',
+        dec_brightness_cmd = 'xbacklight -dec 5',
+        color = '#A674B6',
+        bg_color = '#FFFFFF',
+        path_to_icon = '/usr/share/icons/Adwaita/96x96/status/display-brightness-symbolic.symbolic.png',
+    }
+
+    local cpu_config = {
+        width = 70,
+        step_width = 2,
+        step_spacing = 0,
+        color = "#D72888"
+    }
+
+    local calendar_config = {
+        theme = 'outrun',
+        placement = 'top_right'
+    }
+
+    local text_clock = wibox.widget.textclock()
+
+    local volumebar_config = {
+        main_color = '#FF0000',
+        bg_color = '#FFFF11',
+        mute_color = "00FF00",
+        width = 50,
+        shape = 'bar',
+        margin = '10',
+    }
 
     -- Create a promptbox for each screen
     s.mypromptbox = awful.widget.prompt()
@@ -242,22 +302,41 @@ awful.screen.connect_for_each_screen(function(s)
     -- Create the wibox
     s.mywibox = awful.wibar({ position = "top", screen = s })
 
-    -- Add widgets to the wibox
+    ------------------------------------------------------
+    ---------- Agrega widgets al panel superior ----------
+    ------------------------------------------------------
     s.mywibox:setup {
         layout = wibox.layout.align.horizontal,
         { -- Left widgets
             layout = wibox.layout.fixed.horizontal,
             mylauncher,
-	    -- praisewidget,
             s.mytaglist,
             s.mypromptbox,
         },
         s.mytasklist, -- Middle widget
-        { -- Right widgets
+
+        -- RIGHT WIDGETS
+        {
             layout = wibox.layout.fixed.horizontal,
-            mykeyboardlayout,
-            wibox.widget.systray(),
-            mytextclock,
+            todo_widget(),
+            separator,
+            batteryarc_widget(batteryarc_conf),
+            separator,
+            brightnessarc_widget(brightnessarc_config),
+            separator,
+            cpu_widget(cpu_config),
+            separator,
+            ram_widget(),
+            separator,
+            volumebar_widget(volumebar_config),
+            separator,
+
+            wibox.widget.systray(battery_config),
+            text_clock,
+            text_clock:connect_signal("button::press",
+                function(_, _, _, button)
+                    if button == 1 then calendar_widget(calendar_config).toggle() end
+                end),
             s.mylayoutbox,
         },
     }
@@ -371,8 +450,21 @@ globalkeys = gears.table.join(
               {description = "lua execute prompt", group = "awesome"}),
     -- Menubar
     awful.key({ modkey }, "p", function() menubar.show() end,
-              {description = "show the menubar", group = "launcher"})
-)
+              {description = "show the menubar", group = "launcher"}),
+    
+    -- Brightness options
+    awful.key({ }, "XF86MonBrightnessUp",
+            function ()
+                awful.spawn("xbacklight -inc 15")
+            end,
+            {description = "Incrementa el brillo", group = "Configuración"}),
+
+    awful.key({ }, "XF86MonBrightnessDown",
+            function ()
+                awful.spawn("xbacklight -dec 15") 
+            end,
+            {description = "Decrementa el brillo", group = "Configuración"})
+    )
 
 clientkeys = gears.table.join(
     awful.key({ modkey,           }, "f",
@@ -610,6 +702,6 @@ client.connect_signal("unfocus", function(c) c.border_color = beautiful.border_n
 
 -- Autostart Applications
 awful.spawn.with_shell('compton')
-awful.spawn.with_shell('nitrogen --restore')
+--awful.spawn.with_shell('nitrogen --restore')
 --awful.spawn.with_shell()
 --awful.spawn.with_shell()
